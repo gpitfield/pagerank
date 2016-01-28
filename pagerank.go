@@ -13,21 +13,21 @@ type node struct {
 }
 
 type Graph struct {
-	edges map[int](map[int]float64) // @TODO: This data structure is not ideal.
-	nodes map[int]*node
+	edges map[string](map[string]float64) // @TODO: This data structure is not ideal.
+	nodes map[string]*node
 }
 
 // NewGraph initializes and returns a new graph.
 func NewGraph() *Graph {
 	return &Graph{
-		edges: make(map[int](map[int]float64)),
-		nodes: make(map[int]*node),
+		edges: make(map[string](map[string]float64)),
+		nodes: make(map[string]*node),
 	}
 }
 
 // Link creates a weighted edge between a source-target node pair.
 // If the edge already exists, the weight is incremented.
-func (self *Graph) Link(source, target int, weight float64) {
+func (self *Graph) Link(source, target string, weight float64) {
 	if _, ok := self.nodes[source]; ok == false {
 		self.nodes[source] = &node{
 			weight:   0,
@@ -45,7 +45,7 @@ func (self *Graph) Link(source, target int, weight float64) {
 	}
 
 	if _, ok := self.edges[source]; ok == false {
-		self.edges[source] = map[int]float64{}
+		self.edges[source] = map[string]float64{}
 	}
 
 	self.edges[source][target] += weight
@@ -56,7 +56,7 @@ func (self *Graph) Link(source, target int, weight float64) {
 // ε (epsilon) is the convergence criteria, usually set to a tiny value.
 //
 // This method will run as many iterations as needed, until the graph converges.
-func (self *Graph) Rank(α, ε float64, callback func(id int, rank float64)) {
+func (self *Graph) Rank(α, ε float64, callback func(id string, rank float64)) {
 	Δ := float64(1.0)
 	inverse := 1 / float64(len(self.nodes))
 
@@ -75,7 +75,7 @@ func (self *Graph) Rank(α, ε float64, callback func(id int, rank float64)) {
 
 	for Δ > ε {
 		leak := float64(0)
-		nodes := map[int]float64{}
+		nodes := map[string]float64{}
 
 		for key, value := range self.nodes {
 			nodes[key] = value.weight
@@ -94,7 +94,7 @@ func (self *Graph) Rank(α, ε float64, callback func(id int, rank float64)) {
 				self.nodes[target].weight += α * nodes[source] * weight
 			}
 
-			self.nodes[source].weight += (1 - α) * inverse + leak * inverse
+			self.nodes[source].weight += (1-α)*inverse + leak*inverse
 		}
 
 		Δ = 0
@@ -104,13 +104,15 @@ func (self *Graph) Rank(α, ε float64, callback func(id int, rank float64)) {
 		}
 	}
 
-	for key, value := range self.nodes {
-		callback(key, value.weight)
+	if callback != nil {
+		for key, value := range self.nodes {
+			callback(key, value.weight)
+		}
 	}
 }
 
 // Reset clears all the current graph data.
 func (self *Graph) Reset() {
-	self.edges = make(map[int](map[int]float64))
-	self.nodes = make(map[int]*node)
+	self.edges = make(map[string](map[string]float64))
+	self.nodes = make(map[string]*node)
 }
